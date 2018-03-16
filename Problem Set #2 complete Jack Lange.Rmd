@@ -1,0 +1,206 @@
+---
+title: "Problem Set #2"
+author: "ESCI5201"
+date: "Due September 28"
+output: 
+  pdf_document:
+    fig_height: 4
+    fig_width: 7
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+---
+
+```{r, setup, include=FALSE}
+require(tidyverse)
+require(TSAUMN)
+require(markovchain)
+require(TSA)
+require(ggplot2)
+
+knitr::opts_chunk$set(
+  tidy=TRUE,     
+  size="small",
+  fig.align = "center" )  
+
+theme_set( theme_bw ( ) )
+```
+
+##Introduction
+
+This problem set leads you through some exploratory data analysis of a fairly short time series.  It is meant to introduce you to important statistical and R-programming concepts.  It is okay to struggle with the tasks asked of you.  What's important is that you understand what you to do and that you recognize when you've done it properly.
+
+The data set is a record of El Nino occurrences between 1803 and 2007.  Each El Nino is listed by year and given a strength of "0" (mild to moderate) or "1" (strong).  Also listed is the interval between El Ninos, which is nothing more than the differences of the years.
+
+Load the data by running the following R-chunk:
+
+```{r}
+ens <- read.csv( url( "https://github.com/jrevenaugh/ESCI5201/raw/master/El%20Nino%20Sequence.csv" ) )
+```
+
+###Question 1.  
+In the R-chunk below, provide code to make at least two different plots of this data set.  Label all axes!  
+
+```{r}
+#Plot codes go here.
+plot(ens$Year, ens$Strength, xlab = 'year' , ylab = 'elNino strength', main = 'bimodal elNino strength over time')
+hist(ens$Strength, breaks = 2, xlab = 'elNino strength', main = 'elNino strength frequency comparison',  xaxp  = c(0, 1, 1))
+```
+
+Now explain these plots.  What does the plot tell you?  What were you looking for?  Put your explanations between the two horizontal lines.
+
+Answer:
+\hrule
+Plot explanations go here.
+The first plot shows that the period of time between strong elNino events is relativley constant. The second plot shows that strong elNino events are about half as frquent as mild events.
+\hrule
+
+###Question 2.
+What percentage of the El Ninos were "Strong?"  Don't hand count them, use R to answer this question.  You can do this in a single line of R code, but do it in a fashion that makes sense to you.
+
+```{r}
+#R code to compute percentage of "strong" El Ninos.
+percentStrong = 100* (sum(ens$Strength))/(length(ens$Strength))
+```
+percentage = 34%
+###Question 3.
+What are the mean, median and standard deviation of interval time?  Show your R code below.
+
+```{r}
+#Mean, median and standard deviation of interval time.
+ensINT = ens$Interval[2:length(ens$Interval)]
+meanINT = mean(ensINT)
+medianINT = median(ensINT)
+stdINT = sd(ensINT)
+```
+mean = 3.75 yrs
+median = 3 yrs
+sd = 1.68 yrs
+
+###Question 4.
+El Ninos are somewhat rare events with a waiting time (interval between events) greater than 3 (less than 1/3 of years have an El Nino).  Compute the mean interval time and its variance
+
+```{r}
+# Compute interval time mean and variance.
+variance = (stdINT)^2
+
+```
+variance = 2.83 yrs
+mean = 3.75 yrs
+
+###Question 5.
+If you properly answered (4), you found that:
+
+$$\bar{x}=3.759259$$
+$$s^2=2.87742$$
+
+Why do I care about these?  I'm curious about the distribution of interval times.  Given that 0 is not possible, the distribution can only assume integer values $\ge 1$.  Create a histogram of interval time.
+
+```{r}
+# R code create histogram of interval time.
+
+hist(ens$Interval, xlab = 'interval, years', main = 'time between elNino events')
+```
+
+Hmmm.  I see something that, to my eye, looks like a Poisson distribution shifted over one to the right (poisson random variables can be 0).  Fit a "right-shifted" poisson to the observed interval time distribution.  Do this by choosing the mean value ($~\lambda$) of the poisson and plot it shifted over one to the right (e.g., plot the density of $P(0)$ at $x = 1).  You should superpose this on the histogram of observed interval times.  Doing so will require matching the ordinates by multiplying poisson density by the number of El Ninos (55).
+
+```{r}
+# Histogram with poisson prediction superposed.
+lambda = meanINT
+ml = max (ensINT)
+P = data.frame(Events = 1:ml, P = length(ensINT) *dpois(1:ml, lambda))
+ensINTdf = data.frame(Interval = c(ensINT))
+ggplot(data = ensINTdf, aes(Interval))+
+  geom_histogram()+
+  geom_point(data = P, aes (x=Events, y=P))
+
+
+
+
+
+```
+
+
+###Question 6:
+I wonder if interval times have some sort of structure.  For one thing, do short interval times follow long interval times?  This might happen if it takes a while to build up the Pacific warm pool (long interval) and a few years to drain it (short intervals).
+
+(a) Make a scatter plot of interval time _i_ vs interval time $i+1$.  There are 54 interval times, so your plot should have 53 "dots" on it (although there will be overlapping "dots").  Label your axes!
+
+```{r}
+# Scatterplot of adjacent interval times.
+
+shiftedIntervals =  c(ensINT[2:length(ensINT)], NaN)
+df = data.frame(shiftedIntervals = shiftedIntervals, ensINT = ensINT)
+ggplot (df)+geom_point(aes(x = shiftedIntervals, y = ensINT)) + labs(x = 'i+1', y = 'i')
+```
+
+Well that was a bust.  There's nothing much happening there.  Using some tools from later in the semester, I've found that comparing interval times 3 intervals apart, rather than 1 as above, produces the best correlation.  It's not enormous, but large enough to be intriguing to me.  
+
+(b) Plot interval time as a sequence and superpose the same sequence left-shifted by 3
+
+```{r}
+# Interval time (observed and shifted) sequence.  The x axis should be index, not year.
+intTS = ts(ensINT)
+shiftedIntervals =  c(ensINT[2:length(ensINT)], NaN, NaN, NaN)
+shiftTS = ts(shiftedIntervals)
+#df = data.frame(shiftedIntervals = shiftTS, ensINT = intTS)
+#ggplot (df)+geom_point(aes(x = shiftedIntervals, y = ensINT)) + labs(x = 'i+1', y = 'i')
+
+
+
+ts.plot(intTS, shiftTS,xlab = "index " ,ylab = 'interval', col = c('red','blue') )
+```
+
+Clearly the correlation is limited to the samples near the end of the sequence.  It's not pervasive.
+
+##Question 7:
+We've mined interval time enough.  For the final questions, I want to return to the severity index.  We already know the percentage of "strong" events.  If events are uncorrelated in magnitude, we can predict the likelihood of, say, three strong events in a row.  To quantify this, I want you to construct the observed 2 by 2 transition probability matrix for El Nino severity.  Organize it such that column 1, row 1 is the likelihood of a weak El Nino following weak El Nino, column 1, row 2 is the likelihood of a weak El Nino following a strong El Nino, and so forth.  Row is "from", column is "to."
+
+```{r}
+# Compute observed transition frequency and probability matrices for El Nino severity index. Do not hand count!  Use R.  createSequenceMatrix will help tremendously {markovchain}.
+P = createSequenceMatrix(ens$Strength , toRowProbs = FALSE )
+
+```
+
+#Question 8:
+Compute the expected transition probability matrix assuming no correlation in strength between events.  Use the steadyStates function in {markovchain}
+
+```{r}
+# Expected transition probability matrix
+
+
+markovStrength = new('markovchain', states = c('0','1'), transitionMatrix = P , name = 'Strength of El Nino')
+pr = steadyStates(markovStrength)
+```
+
+#Question 9:
+The last exercise is to test our null hypothesis that transitions between El Ninos do not depend on the prior state, but simply the probability of being in the transition state.  Because this one is a bit tough, I will walk you through it.
+
+Let **N** be your observed transition frequency matrix.  It comes straight out of createSequenceMatrix.  Let **P** be your expected transition probability matrix.  Then the chi-square test of random transitions is given by:
+
+```{r eval = F}
+#xsq <- chisq.test( x = as.vector( N ), p = as.vector( P ), rescale.p = TRUE )
+```
+
+Now evaluate this test for your matrices:
+
+```{r}
+#Chi-square test for null hypothesis
+pM = t(matrix(rep(pr,2), nrow = 2))
+pM[1,1:2] = pM [1,1:2] *( 100- percentStrong)/100
+pM[2,1:2] = pM [2,1:2] *percentStrong/100
+xsq = chisq.test(x= as.vector(P), p= as.vector(pM), rescale.p = TRUE)
+```
+
+You should get a rather small _p_ value.  What does this tell us?  Note that the degrees of freedom is wrong in the test (it should be 2).  Answer below:
+A small p value indicates that there is some relationship between the phenomena being tested. in this case, there is a relationship between between the strength of ocnsecutive el nino events.
+
+
+Answer:
+\hrule
+Interpretation of chi-squared test goes here.
+the chi squared value tells how well the given data matches the expected probabilities (in this case the steady state matrix) chi^2 = 14 is fairly low for a datatset with 54 observation, so the data matches the prediction well.
+\hrule

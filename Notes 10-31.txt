@@ -1,0 +1,11 @@
+unsaved notes: Fillin in gaps - see the class slides
+
+interpolating irregular samples
+-should give known values back
+-interpolation should be smooth in intervals of little data
+- interpolator should not have many parameters
+- Should be tolerant of data
+- see Signal packGE IN r
+-HERMITE GOOD
+- steinman looks really nice!
+- linear interp is good excep for no 1st derivative

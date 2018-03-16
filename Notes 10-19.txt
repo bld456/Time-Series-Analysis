@@ -1,0 +1,24 @@
+Short Filters
+
+for smoothing: moving average is OK but you can do better
+LTI (Lineat, time-invariant filtering):
+	- w filter
+	- r tiem series
+	- s filtered 
+	-then: s = r convolved with w
+
+
+Smoothing a rough TS (low pass):
+	- running mean
+	- works better if the divid?g coefficient is allowed to chage @ each end of the TS
+	-
+
+get rid of low freq (hi pass)
+	- basically subtract the low pass filtered series from the OG series
+
+Derivative and integrals  of time series:
+	- derivativeis a roughening filter/ noise amp
+	- short derivatives cant get high freq
+	- fdfilter - gives finitte difference coefficients
+	-	integration smooths
+	=-ncint method to integrate 

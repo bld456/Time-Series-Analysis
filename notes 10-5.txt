@@ -1,0 +1,32 @@
+POWER SPECTRUM ESTIMATION TECHNIQUES
+
+1. Periodogram
+	- inconsistent
+	-bad spectral leakage (rectangular window)
+   WOSA variation
+	- consistent
+	- less spectral leakage
+2. Blackman Tukey (moving average)
+	-assumes moving average process
+	- parametric
+	- consistent
+	-leakage okay
+3. AR spectrum/Yule-walker/mmaximum entropy approach
+	-ASSUME: an AR(p) process 
+	- good for peaked spectra, others are better for smooth
+	-estimates memory coefficients, variance of white noise to get power spec
+	- no fourier transformation
+	- DONT CALCULATE PAST THE NYQUIST
+	- estimating P of AR(p) - let the comp take care
+4. Multitaper method/Thompson's / MTM
+	-non parrametric
+	-find a set of tapers that gives good estimate
+	- reduces spectral leakage
+	-choose nw >= 1- the bigger it is the smoother the TS (bin size)
+	- pick K = 2nw or 2nw-1 (k is intigetr)
+	- can control smoothing
+
+ALL REQUIRE:
+- regularly sampled data
+- go straight to multitaper to pick out obvious perodicity
+- 

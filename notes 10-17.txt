@@ -1,0 +1,22 @@
+Convolution and Correlation and Coherence
+
+Convolution:
+ - basis of linear filtering
+ - order of ops doesnt matter
+ - simple example: an exponential and a delta function
+ - R convolve fxn conj = FALSE
+ - convoluution in time space = multiplication in frequency space (need to be same length)
+ - "circular convolution" from R's method - don't want this to happen. Do extra zero padding to avoid this (type = filter)
+ - popular with instrumentation "impulse response" comes from a delta fxn input
+ - have to do deconvolution to get input response from instrument
+
+Cross Correlation
+ - NOT COMMUTATIVE
+ - in frequency domain, it is the multiplication of one complex conjugate
+ - autocorrelation/ auto covariance = g* star g
+ - good for telling if and where series h appears in series i 
+
+Coherence
+ - Xi and Yi are ts
+ - think Yi has a shifted and scaled version of Xi and noise
+ - coherence will tell you at what time difference they will look alike

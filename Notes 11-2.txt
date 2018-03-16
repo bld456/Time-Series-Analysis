@@ -1,0 +1,22 @@
+Up and down sampling of TS
+
+- changing the rate/interval without aliasing
+
+
+UPsampling
+- raising the sampling rate
+- use an interpolation method: OK
+- Shannon's interpolation: Exactly correct
+- fft the TS,  double the nyquist, fill in power spectrum with zeroes to new nyyquist, IFFT back to time
+	-this gives spectral leakage
+
+downsampling
+-uh oh aliasing danger ahead
+- lower delta t reduces nyquist
+- must filter out energy aboce new nyquist
+- take every nth smaple
+-use resample R fxn (not workinng)
+- decimate r fxn in Signal or fftdecimate in TSAUMN
+
+principle component analysis
+-

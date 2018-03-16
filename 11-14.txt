@@ -1,0 +1,4 @@
+notes 11-4
+Singular Spectrum Analysis
+
+when you wanna do PCA but you only have 1 TS

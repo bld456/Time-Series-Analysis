@@ -1,0 +1,37 @@
+10-10
+
+
+dealing with uneven sampling:
+
+interpolate?
+	works well for dense red spectrun, poorly for others
+
+Lomb/Scargle method:
+	"least squares spectrum"
+	lomb package, lsp function (lomb scargle periddogram)
+	works for non regular sampling
+	or spec.ls to get nice return (have to reinstal TSAUMN)
+	- non parametric
+	- no interpolation needed
+	- can amelioratie aliasing
+	- its a periodogram. ick! (inconcsistent estimator)
+	- you can WOSA it (window)
+	- spec.mtls()  multitaper lomb scargle
+	- 
+Coherency analysis:
+	- do time series have related frequencies?
+Bispectrum: 
+	- 3rd moment (non linearities)
+Evolutive spectra:
+	- non stationary TS
+
+
+more data wrangling
+
+	- require(tiddyvesrs) it has all the good stuff
+	- minus sign to drop columns, dplyr works or just [,-C(11:13)]
+	- filter(dataframe, criteria) 
+	- intersect(df,df) tells you what is in both lists
+	- union(df,df) join df, no duplicates
+	- joining dfs with different columns : full_join(Df,df) left_join, right_join adds from R to L or L to R. inner_join gives shared subjects
+	- gather() and spread() 

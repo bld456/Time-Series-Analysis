@@ -1,0 +1,16 @@
+Kalman Kiltering
+
+- run backwards to get starting point
+- seful for smoothing rough
+- useful for  filling NA
+-like a low pass filter
+
+
+-rts smoothing (rauch, tung, striebel)
+-   imroved kalman
+- at each xt, it uses all time  by running forwards and then back
+
+training wheels OFF:
+
+-multivariat kalman
+-  simple models: local level, local trend

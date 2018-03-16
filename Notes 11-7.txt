@@ -1,0 +1,33 @@
+
+principal component analysis example
+
+pca review:  make a data mtrix, make a component matric, eigen vectors of component matrix are Principal COmponents
+then the components can be weighted to make original data
+
+fxns and 'apply'
+
+-
+
+some <- function(x, abs = FALSE, type = c(1,2,3)){
+	n<- length(x)
+	s<-0
+	if (abs) x<- abs(x)
+	for (i in 1:n) s<- s +x[i]
+	return (s)
+}
+
+
+*abs will defaultto false
+*type defaults to 1, wont throw an error if not equal to 1,2,3
+* if types are strings, you canuse match.arg so user only need to know first letter. match.arg also fores user to input a valid type
+
+
+
+APPLY
+- apply(matrix, MARGIN = 1, function)   applies function to matrix, row by row. margin 2 is column by column
+- apply (x, MARGIN = 1, function(x,y){sum(x^y)}, y=2)
+
+faster than a for loop
+works on matrix
+lapply for lists
+sapply for vectors

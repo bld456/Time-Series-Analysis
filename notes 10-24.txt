@@ -1,0 +1,23 @@
+hw- hard edges show up in high freq
+
+FILTERING
+	-linear filter: filtered TS is a weighted sum of the input TS
+	-Time-Invariant filter : weights depend only on time seperation, not absolute time
+	-LTI (linear time invariant) can be written as a convolution of input 'x' and filter 'f'
+
+	-Causal Filter: The effect must trail the cause. Output at time 'i' depends only on times prior to 'i'
+	- Realizable FIlter: can be implemented in real time. Implies a causal filter. implies finite length implse response
+	- cosfilt in TSAUMN does cosine filtering :tell it wher eyou want the filer == 1 and ==0, it will cos taper in between
+	- 
+
+- lanczos filter: important for graphics, climate studies "acausal FIR filter"
+- need odd # points
+- need a "corner freq" 
+
+causal filters:
+	-butterworth filter
+	-Chebyshev filter
+	-eliptic
+inverse filter/deconvolution
+kalman filters: linear, not time invariant; adapts to ts 
+prediction filtering 

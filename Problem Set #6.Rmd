@@ -1,0 +1,211 @@
+---
+title: "Problem Set #6"
+author: "ESCI5201"
+date: "Due November 30"
+output: 
+  pdf_document:
+    fig_height: 4
+    fig_width: 7
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+---
+
+```{r, setup, include=FALSE}
+require(tidyverse)
+require(lubridate)
+require(signal)
+require(multitaper)
+require(TSAUMN)
+
+require(ggplot2)
+
+require(factoextra)
+
+knitr::opts_chunk$set(
+  tidy=TRUE,     
+  size="small",
+  fig.align = "center" )  
+
+theme_set( theme_bw ( ) )
+options( warn = -1 )
+```
+
+##Introduction
+In PS #5 you assembled a nice trio of time series: MEI, NAO and MMGT.  In this problem set, you will work with these three, ultimately producing a model of how energy in the first two maps to energy in the third.  The training wheels are fully off now, but I will provide some help along the way.
+
+Start by making sure you have the latest TSAUMN package--in the R-Studio console, run:
+
+require( devtools )
+install_github( "jrevenaugh/TSAUMN" )
+
+##Task 1
+Get the three time series back in your environment.  You can do this by using load() if you wrote them to disk, or by running the R chucnks from PS #5.  
+
+```{r}
+load('MMGTlong')
+load('NAOlong')
+load('MEIlong')
+
+NAOts = ts(data = NAOlong$filled, start = c(1950,1),deltat = 1/12)
+MEIts = ts(data = MEIlong$filled, start = c(1950,1),deltat = 1/12)
+MMGTts = ts(data = MMGTlong$filled, start = c(1880,1),deltat = 1/12)
+```
+
+(a) Remove the trend from MMGT.  Package TSAUMN has a nice function (detrend) for doing this.  I recommend using:
+
+MMGT <- detrend( MMGT, n = 3 )
+```{r}
+MMGTdetrend = detrend( MMGTts, n = 3 )
+```
+
+
+(substitute the name of your MMGT time series for "MMGT" in the above).  This removes a cubic polynomial from the data, resulting in a much more stationary time series.
+
+(b) Re-run the MTM spectra setting returnInternals to TRUE.  This is necessary for coherence analysis.  Once you have those three output lists, use mtm.coh to compute the coherence between MEI and MMGT, and NAO and MMGT.  The default plot is okay, although I prefer the plot made by gplot.mtm.coh.  Either is fine.
+
+```{r}
+NAOspec = spec.mtm(NAOts, returnInternals = TRUE)
+MMGTspec = spec.mtm(MMGTdetrend, returnInternals = TRUE)
+MEIspec = spec.mtm(MEIts, returnInternals = TRUE)
+ 
+```
+
+```{r}
+mtm.coh(NAOspec, MMGTspec)
+mtm.coh(MMGTspec, MEIspec)
+
+```
+
+
+(c) Interpret the MSC of the coherence analyses.  What aspects of MEI and NAO are strongly coherent with MMGT?
+# There is strong coherence at frequency 1.5 for MMGT and NAO. THere doesnt appear to be strong coherence between MMGT and MEI.
+
+
+
+##Task 2
+Let's see what PCA thinks of the three time series.  Assemble a data matrix with MEI, NAO and MMGT as columns.  Perform the PCA using prcomp (with both scale and center set to TRUE) and investigate what you find.  FYI: prcomp returns a list.  List element x holds the 3 principal components.  List element sdev holds the square-root of the eigenvalues. 
+
+
+```{r}
+MMGTtsdf=data.frame(MMGT=as.matrix(MMGTdetrend ), date=time(MMGTdetrend ))
+MEItsdf =data.frame(MEI=as.matrix(MEIts), date=time(MEIts))
+NAOtsdf =data.frame(NAO=as.matrix(NAOts), date=time(NAOts))
+
+
+data = inner_join(NAOtsdf, MEItsdf, by = 'date')
+data = inner_join(data, MMGTtsdf, by = 'date')
+data$date = NULL
+PCA = prcomp(data)
+
+
+
+pcaVar( PCA )
+fviz_pca_var(PCA) + coord_fixed(ratio =1) +labs(x= "PC1", y= "PC2")
+```
+
+
+What you will find is proof that MEI and MMGT have much more in common than NAO and MMGT.  But I want you to tell me how the PCA demonstrates this.
+
+
+
+
+
+#Both  MEI and MMGT are primarilly loaded on PC1, while NAO is mostly loaded on PC2. This suggests that MEI and MMGT have more in common with each other than NAO.
+
+
+
+##Task 3
+Harkening back to the spectra we obtained in PS #5, it should come as little surprise that PCA identifies MEI and MMGT as more alike than NAO and MMGT (simply look at the distribution of energy with frequency).  Without some filtering, NAO and MMGT are largely uncorrelated.
+
+But MEI and MMGT are correlated.  Let's attempt to linearly model MMGT with MEI.  By linear, I mean let's find a baseline shift and scaling factor to apply to MEI to make it best predict MMGT.  
+
+
+(a) To do this, we will use the lm() function.  This fits a linear model using least squares.  In this case, run:
+
+m <- lm( MMGT ~ MEI )
+```{r}
+MMGTtrim = window(MMGTdetrend,start = start(MEIts),end = end(MEIts))
+MEItrim = window(MEIts,start = start(MMGTdetrend),end = end(MMGTdetrend))
+m <- lm(MMGTtrim ~ MEItrim )
+
+summary(m)
+```
+
+
+(substitute the names of your MMGT and MEI timeseries).  The returned list m holds all sort of information.  You can find out a lot from
+
+summary( m )
+
+You can get the predicted values from fitted( m ) and the misfit from residuals( m )
+
+(b) Read up on lm() and let me know if the fit is "significant."  
+#The P value is < 0.05, so there is a realtionship between MEI and MMGT. Additionally, the residuals are randomly distributed. 
+(c) Include a nice plot(s) of relevant time series that illustrates the fit.
+
+
+```{r}
+
+ts.plot( MEItrim * coefficients(m)[2] + coefficients(m)[1], MMGTtrim, gpars = list(col = c( "black", "red")))
+```
+
+##Task 4
+Repeat the linear fit using
+
+m <- lm( MMGT ~ MEI + NAO )
+
+```{r}
+MMGTtrim = window(MMGTdetrend,start = start(MEIts),end = end(NAOts))
+MEItrim = window(MEIts,start = start(MMGTdetrend),end = end(NAOts))
+NAOtrim = window(NAOts, start = start (MEIts) )
+
+ m = lm(MMGTtrim ~ MEItrim + NAOtrim)
+summary(m)
+
+```
+
+Again, be sure to substitute in the proper names for your time series. 
+
+You won't see much improvement in R-squared (the fractional variance reduction) because NAO is essential uncorrelated with MMGT.  That's okay--I'm just setting up the next task.
+
+
+##Task 5
+Now for the fun stuff.  We are going to derive a multivariate, FIR, causal filter to predict MMGT using MEI and NAO.  To do this, we need to create a matrix, call it X, that has MEI and NAO as columns.  
+
+(a) Once you've got this, run
+```{r}
+X = cbind(NAOtrim, MEItrim)
+
+F <- whfir( X, MMGTtrim, n = 6 )
+MMGT_pred <- whfilt( X, MMGTtrim, F )
+
+
+```
+
+F <- whfir( X, MMGT, n = 6 )
+
+This will use Wiener Hopf theory to obtain the optimum filter.  The choice of n = 6 comes from me doing some other analyses and determining that this is the "best" choice for the length of the FIR filter.  The returned list F has the filter coefficients in element h (i.e., F$h).  The first filter coefficient is equivalent to the scaling factor in the linear fit.  The others are adjusting the amplitude and phase spectra of the input time series to best match the target (MMGT).  To see the prediction, use:
+
+MMGT_pred <- whfilt( X, MMGT, F )
+
+Note that the prediction will start with some NAs (roll-on effect of the causal filter ).  That's expected. 
+
+(b) Plot MMGT and the prediction together.
+```{r}
+ts.plot(MMGTtrim, MMGT_pred , gpars = list(col = c( "black", "red")))
+
+```
+
+
+(c) Plot the cross-correlation between MMGT and the prediction (MMGT_pred).  If all has gone according to plan, this should peak at a lag of 0.  The value at the peak is the variance reduction (what fraction of total variation in MMGT is explained by the filtered sum of MEI and NAO).
+
+
+
+```{r}
+ccf(MMGTtrim, MMGT_pred, plot = TRUE, na.action = na.pass,type = c("correlation", "covariance"))
+```
+
+

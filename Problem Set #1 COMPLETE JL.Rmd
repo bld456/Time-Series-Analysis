@@ -1,0 +1,226 @@
+---
+title: "Problem Set #1"
+author: "ESCI5201"
+date: "Due September 14"
+output: 
+  html_document:
+    theme: paper
+    fig_height: 3
+    fig_width: 6
+---
+
+```{r, setup, include=FALSE}
+require( tidyverse )
+
+knitr::opts_chunk$set(
+  tidy=TRUE,     
+  size="small",
+  fig.align = "center" )  
+
+theme_set( theme_bw ( ) )
+```
+
+##Introduction
+
+This problem set is all about R and using R Markdown files.  We will run across some time series and statistics along the way, but the emphasis is on gaining confidence with the tools.  The problem set is presented as a series of tasks.  There are only a few questions asked.  Most often I simply want you to complete the outlined tasks.
+
+###Task 1.
+R facilitates the use of vectors and matrices, but can be confusing at first.  Run the following R chunk and figure out what these four vector products correspond to.  The easiest way is to print them out after you've run the chunk (e.g., enter p2 in the console and hit return).  BTW, the function t() returns the transpose of the operand.
+
+Run this chunk by clicking the little green "forward" triangle in the shaded area just below.
+
+```{r eval = FALSE}
+x <- c( 1, 2, 3 ) # create a vector x of three rows
+y <- c( 1, 1, 1 ) # create a vector y of three rows
+
+p1 <- x * y
+p2 <- x %*% y
+p3 <- t( x ) %*% y
+p4 <- x %*% t( y )
+```
+
+The operator that forms p1 multiplies corresponding elements together and returns a vector of the same size.  It will "loop" over the shorter vector to compute the product when lengths don't match (they do need to be multiples of one another).  This allows us to use it to scale vectors and matrices.  The operator in the second is traditional matrix multiplication.
+
+
+What is p1 (one of scalar, vector or matrix?  
+Vector
+What is p2?   
+Scalar
+What is p3?   
+Scalar
+What is p4? 
+Matrix
+
+
+###Task 2
+R provides many ways to create a vector.  The c() function is one way.  Here are some others:
+
+```{r eval = FALSE}
+x <- seq( 1, 10, 1)
+y <- rep( 1, 10 )
+z <- vector( mode = "double", length = 10 )
+```
+
+Run this chunk and print out the results in the console window (e.g., enter x and hit return).  Understand what each does.  Feel free to use help for each.  The  task here is to "multiply" any two of the three to create: (1) a scalar, (2) a vector and (3) a matrix.  Enter your code below:
+
+```{r}
+
+ SCALAR = x %*% y
+ VECTOR = x * y
+ MATRIX = x %*% t(y)
+```
+
+###Task 3.
+Matrices aren't entirely intuitive in R.  The following R chunk populates a 3 by 3 matrix.  Your task is to determine how elements in the list are ordered in the output matrix.  Does R complete column 1, then column 2, then column 3.  Or does it fill row 1, then row 2, then row 3?
+
+```{r eval = FALSE}
+A <- matrix( c( 1, 2, 3, 4, 5, 6, 7, 8, 9 ), ncol = 3 )
+```
+
+Put your answer here:  COLUMNS FIRST
+
+_Stop and Think:_  Most function calls in R expect parameters (scalars, vectors, matrices or more complicated objects) to be passed to them.  Some parameters have default values.  Some are optional.  Some are required but carry no default value (those are the 3 options).  Here's an example.  I've created a vector with 10 elements.  The last one is "NA."  R uses this to flag a value that is Not Available.  Think of it as a missing data point.  They're quite common.  Read the help for sum() first.  Then run this chunk.  What is being done differently between the two calls to sum().
+
+```{r eval = FALSE}
+x <- c( rep( 1, 9 ), NA )
+sum( x )
+sum( x, na.rm = T )
+```
+
+###Task 4.  
+So far we haven't tried to look at specific elements of a vector or matrix, but clearly we will have need to.  R uses [ ] brackets to denote indices.  For instance, the 3rd element of vector x is x[3].  The second row, third column of matrix A is A[2,3].  Missing indices indicate to R that you want all of the possible indices.  Thus A[,1] is a vector composed of the first column of A, and A[1,] is a row vector composed of the first row of A.
+
+We can subset indices as well.  For instance, x[3:6] refers to a vector of length 4 whose elements are elements 3, 4, 5 and 6 of x.  We can subset either or both indices of a matrix.  The following R chunk creates a matrix A and a vector x whose dimensions don't match for matrix multiplication.
+
+```{r eval = FALSE}
+A <- matrix( c( 1, 2, 3, 4, 5, 6, 7, 8, 9 ), ncol = 3 )
+x <- seq( 2, 7, 1 )
+```
+
+Your task is to combine them in a matrix product using a subset of indices of one or both.  Put your product in the empty chunk below.  Be sure to run the above chunk to be sure A and x are defined.
+
+```{r}
+
+
+A[1,]* x[2:4]
+```
+
+
+
+R includes many ways to plot data, time series included.  It also facilitates many statistical operations, often making them as simple as a single function call.  Here we combine both by creating a "white noise" time series.  
+
+```{r eval = FALSE}
+n <- 100
+x <- rnorm( n ) # create a vector of n normal random numbers
+plot( x, type = "l" )
+```
+
+The result is a Q&D plot of a white noise time series.
+
+###Task 5.  
+Read the help page for plot (?plot in the console) and make the following changes to the plot provided above:
+
+(a) Label the x axis "Time" (no quotes in the actual label).
+(b) Label the y axis "White Noise Signal".
+(c) Title the plot "Task 1.""
+(d) Plot the white noise in red.
+
+```{r}
+# Put your R code for task 5 here.
+plot(x, type = "l", xlab = "Time", ylab = "White Noise Signal" , main = "Task 1.", col = "red" )
+```
+
+###Task 6.
+The white noise signal above is a realization of a process that has 0 mean and unit standard deviation.  How close are the sample estimates to the expected values?  Use the functions mean() and sd() to estimate the sample mean and standard deviation.
+
+```{r}
+# Put your R code for task 6 here.
+mean(x)
+sd(x)
+```
+
+###Task 7.
+
+Execute the following R chunk:
+
+```{r eval = FALSE}
+f <- 1 / 10
+t <- seq( 0, 100, 1 )
+x <- sin( 2 * pi * t * f )
+```
+
+_Stop and think:_
+What is t?  Is it a scalar, vector, matrix?  Feel free to use ?seq to help you answer this.  As laid out, f is a frequency in units of cycles/time.  Combine that with your understanding of t to divine the form of x.
+
+Done thinking?  Good, now execute the following:
+
+```{r eval = FALSE}
+plot( t, x, type = "l", xlab = "Time", ylab = "Value" )
+```
+
+Did you guess right for x?
+
+To complete this task, create the same type of plot for differing values of f (at least two).
+
+```{r}
+# R code for plots of x with differing values of f goes here.
+x = 2 * t
+plot( t, x, type = "l", xlab = "Time", ylab = "Value" )
+
+x = t^2
+plot( t, x, type = "l", xlab = "Time", ylab = "Value" )
+```
+
+###Task 8.
+
+How many samples are in x?  You can divine it from the code above, but what if you couldn't see it?
+
+Execute the following:
+
+```{r eval = FALSE}
+length( x )
+
+```
+
+For this task, double the length of x for the last frequency you used in Task 3.  Then plot the cosinusoid for the same length and frequency.
+
+```{r}
+# Plot of double length sinusoid.
+t <- seq( 0, 201, 1 )
+x <- sin( 2 * pi * t * f )
+plot( t, x, type = "l", xlab = "Time", ylab = "Value" )
+# Plot of double length cosinsoid.
+y <- cos( 2 * pi * t * f )
+plot( t, y, type = "l", xlab = "Time", ylab = "Value" )
+
+
+```
+
+
+###Task 9.
+Sine and cosine are the same function with a shift of the independent variable.  Figure out how to shift sin to match cosine by properly setting the variable "phi" in the R-chunk below.  You will know you have the answer correct when you only see one time-series in the plot (it is two functions that overlay).  Feel free to use, I dunno, maybe the double angle theorem?
+
+```{r eval = FALSE}
+# Shift sine to equal cosine by adjusting phi.
+n <- 100
+f <- 1/10
+t <- seq( 1, n, 1 )
+phi <- pi/2 # Change me!
+sx <- sin( 2 * pi * t * f + phi )
+cx <- cos( 2 * pi * t * f )
+plot( t, cx, type = "l", xlab = "Time", ylab = "Value" )
+lines( t, sx )
+```
+
+###Task 10.
+Use plot() to draw a circle.  Take a look at ?plot first.  You'll need to create two vectors, one for x, one for y.  I don't care about the radius or how "discrete" your circle is, any circle will do.  Note that the default aspect ratio of plots may make your circle look like an ellipse.  That's fine--I'll know it's a circle by the axes guides.
+
+```{r fig.height = 4, fig.width = 4}
+# Get R to plot a circle using plot() and separate vectors for x and y coordinates.
+t <- seq( 1, 100, 1 )
+f= 1/10
+y <- sin( 2 * pi * t  *f )
+x<- cos( 2 * pi * t *f )
+plot(x,y)
+```
+

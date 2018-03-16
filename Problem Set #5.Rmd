@@ -1,0 +1,202 @@
+---
+title: "Problem Set #5"
+author: "ESCI5201"
+date: "Due 11/9"
+output: 
+  pdf_document:
+    fig_height: 4
+    fig_width: 7
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+---
+
+```{r, setup, include=FALSE}
+require(tidyverse)
+require(signal)
+require(multitaper)
+require(TSAUMN)
+
+knitr::opts_chunk$set(
+  tidy=TRUE,     
+  size="small",
+  fig.align = "center" )  
+
+theme_set( theme_bw ( ) )
+options( warn = -1 )
+```
+
+##Introduction
+I've been talking about making you do some serious data wrangling in a problem set.  That time has come.  
+
+In this problem set you will get three oddly formatted data sets into common form, perform spectral analysis and do a little filtering.  The resulting cleaned/merged data will be used in the last problem set.  
+
+The three time series are:
+  1.  The Multivariate ENSO Index (MEI).  You'll find an explanation of the data set at: https://www.esrl.noaa.gov/psd/enso/mei/
+  and the data itself at:
+  https://www.esrl.noaa.gov/psd/enso/mei/table.html
+  
+  2.  The North Atlantic Oscillation (NAO).  A brief explanation is kept at: http://www.cpc.ncep.noaa.gov/products/precip/CWlink/pna/nao_index.html
+  The data is here: https://github.com/jrevenaugh/ESCI5201/raw/master/NAO.txt
+  
+  3.  Monthly Mean Global Temperature (MMGT).  I've downloaded this for you and put it on github as a CSV file: https://github.com/jrevenaugh/ESCI5201/raw/master/monthly%20global%20mean%20T.csv
+  
+##Task 1 - MEI
+Use read_table2 to read the MEI data directly from the web.  Note that you will get warning messages due to the footnotes at the bottom of the page.  That's okay--once read, delete those rows from the data tibble.
+```{r}
+MEI = read_table2(  file = 'https://www.esrl.noaa.gov/psd/enso/mei/table.html', skip = 13)
+MEI <- MEI[-c(69:109),]
+```
+
+Now that you have the data in tibble form, convert it long format.  This is Hadley speak for a tibble with two columns: date and index.  Have the first date be January 1, 1950 (the center of the first bimontly average).
+```{r}
+MEI =as.vector(t(MEI[,-1]))
+Dates = seq(as.Date("1950/1/1"), as.Date("2017/12/1"), by ="month")
+MEIlong = data.frame(Dates, as.double(MEI))
+
+```
+
+##Task 2 - NAO
+Here I'm simply being mean--NOAA publishes a monthly average NAO index.  The NAO index I put on github is the daily average.  Why?  Because data doesn't always come the way you want it.
+
+Read the data from the web directly with read_table2.  This is a good time to learn about using the col_names and col_types parameters.  Use them correctly and you can get nicely named columns and numbers in your tibble.  
+```{r}
+NAO = read_table2('https://github.com/jrevenaugh/ESCI5201/raw/master/NAO.txt', skip = 1, col_names = c('Year', 'Month', 'Date', 'Index'))
+
+#NAOdates = seq(as.Date("1950/1/1"), as.Date("2016/6/30"), by ="day")
+
+#NAO = data.frame(NAO$Index, row.names = NAOdates)
+```
+
+
+You've got daily NAO now.  You need to compute monthly averaged NAO.  How?  I'll leave that to you, but aggregate() is a solid bet.  The date for the average isn't uniquely defined (e.g., on what day do you post a January average?).  To resolve that ambiguity, always use the first day of the month.
+```{r}
+NAO = aggregate( Index ~ Month + Year , NAO , mean )
+Dates = seq(as.Date("1950/1/1"), as.Date("2016/6/1"), by ="month")
+NAOlong = data.frame(Dates, NAO$Index)
+
+```
+
+
+##Task 3 - MMGT
+Aw geez, another goofball data format, this time with data stored as an integer composed of the concatenation of the four digit year and two digit month.  Deal with it.  As before, set the monthly averages for the first day of the month.
+```{r}
+MMGT = read_csv('https://raw.githubusercontent.com/jrevenaugh/ESCI5201/master/monthly%20global%20mean%20T.csv', skip = 4)
+
+# <- separate(MMGT, col =1, into = c("year", "month"), sep = c(4) )
+Dates = seq(as.Date("1880/1/1"), as.Date("2017/9/1"), by ="month")
+MMGTlong = data.frame(Dates, MMGT$Value)
+```
+
+It wouldn't be a bad idea to save all of the tibbles...  Use save().
+```{r}
+save(MMGTlong, file = 'MMGTlong')
+save(NAOlong, file = 'NAOlong')
+save(MEIlong, file = 'MEIlong')
+
+
+```
+
+##Task 4
+Look at your three tibbles.  They should all have two columns: date and value.  If done correctly, dates are all on the first day of the month and in the same format from tibble to tibble.  If they aren't, go back and redo them.  
+
+Okay, now use dplyr's join commands to build a master tibble with the temporal intersection of the three datasets.  The result should be a four column tibble with date, MEI, NAO and MMGT as columns.  Save it.
+```{r}
+
+mergedData = merge (MMGTlong, NAOlong, all = TRUE)
+
+
+mergedData = merge(mergedData, MEIlong, all = TRUE)
+colnames(mergedData) <- c("Date", "MMGT", "NAO", "MEI")
+save(mergedData, file = 'mergedData')
+```
+
+
+##Task 5
+Create a vertical, three-facet plot of the three time series using ggplot.  The scales need to vary for the y axis.
+
+
+```{r}
+library(reshape)
+MELTmergedData = melt.data.frame(mergedData , id.vars = "Date")
+ggplot(mergedData, aes(x= Date, y= MEI))+ geom_line()
+
+ggplot(MELTmergedData, aes(x= Date, y= value)) + geom_point() +facet_grid(variable ~.)
+```
+
+##Task 6
+If there are any NAs in the data, fill them using the mean value.  Once filled, create separate ts objects for each.  Be sure to correctly set the start date and delta t (1/12).
+```{r}
+library(zoo)
+
+NAOlong$'filled' = na.aggregate(NAOlong$NAO.Index)
+MEIlong$'filled' = na.aggregate(MEIlong$as.double.MEI.)
+MMGTlong$'filled' = na.aggregate(MMGT$Value)
+save(MMGTlong, file = 'MMGTlong')
+save(NAOlong, file = 'NAOlong')
+save(MEIlong, file = 'MEIlong')
+
+NAOts = ts(data = NAOlong$filled, start = c(1950,1),deltat = 1/12)
+MEIts = ts(data = MEIlong$filled, start = c(1950,1),deltat = 1/12)
+MMGTts = ts(data = MMGTlong$filled, start = c(1880,1),deltat = 1/12)
+
+plot(NAOts)
+plot (MEIts)
+plot(MMGTts)
+```
+
+
+Compute and plot MTM spectra for each of the three.  Bonus points for doing this as a faceted plot.
+```{r}
+spec.mtm(NAOts)
+spec.mtm(MEIts)
+ spec.mtm(MMGTts)
+```
+
+
+
+
+
+
+##Task 7
+NAO has a yearly periodicity.  "Isolate" it using cosfilt.  Put the filtered and unfiltered time series in a new tibble and create a nice plot with both in the same frame.  Repeat for MEI and MMGT.  Do these have strong yearly periodicities?  A good plot will answer that question.
+
+
+```{r}
+filteredNAO = cosfilt(NAOts, fc = c(0.07, 0.09, 0.1,0.5) , fw = c(1,1,0,0))
+NAOdates = seq(as.Date("1950/1/1"), as.Date("2016/6/1"), by ="month")
+NAOcompare = data.frame(as.vector(NAOts), as.vector(filteredNAO), NAOdates)
+MELTNAOcompare = melt.data.frame(NAOcompare , id.vars = "NAOdates")
+
+ggplot(MELTNAOcompare, aes(x= NAOdates, y = value))+ geom_line() +facet_grid(variable ~.)
+
+
+
+
+
+
+filteredMEI = cosfilt(MEIts, fc = c(0.07, 0.09, 0.1,0.5) , fw = c(1,1,0,0))
+MEIdates = seq(as.Date("1950/1/1"), as.Date("2017/12/1"), by ="month")
+MEIcompare = data.frame(as.vector(MEIts), as.vector(filteredMEI), MEIdates)
+MELTMEIcompare = melt.data.frame(MEIcompare , id.vars = "MEIdates")
+
+ggplot(MELTMEIcompare, aes(x= MEIdates, y = value))+ geom_line() +facet_grid(variable ~.)
+
+
+filteredMMGT = cosfilt(MMGTts, fc = c(0.07, 0.09, 0.1,0.5) , fw = c(1,1,0,0))
+MMGTdates = Dates = seq(as.Date("1880/1/1"), as.Date("2017/9/1"), by ="month")
+
+MMGTcompare = data.frame(as.vector(MMGTts), as.vector(filteredMMGT), MMGTdates)
+MELTMMGTcompare = melt.data.frame(MMGTcompare , id.vars = "MMGTdates")
+
+ggplot(MELTMMGTcompare, aes(x= MMGTdates, y = value))+ geom_line() +facet_grid(variable ~.)
+
+
+#MEI changes very little when the 1-year filter is applied, additionally it's MTM spectrum does not have power at 1 year, so this time series does not have yearly periodicity. The MMGT and NAO time series both smooth considerably when the 1-year periodicity filter is applied, additionaly both series demonstrate power at 1 year in their MTM plots. Both of these time series haveperiodicity of 1 year. 
+```
+
+##Task 8
+Drink a beer, eat a donut, get a massage, call home... whatever it is that makes you feel good because PS #5 _wasn't_ easy but _it's_ done.

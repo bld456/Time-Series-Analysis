@@ -1,0 +1,13 @@
+Time frequency analysis
+-useful if power at certain frequencies varies with  time
+-a 'chirp' is a frequency swept sinusoid. it has power at all freq
+-
+
+"spectogram"
+-do a spectral estimate over a window, slide the window along
+- evolMTM()
+
+"scalogram"
+-wavelet based
+-morrlets multiplied by TS, used like filters
+- morletT()

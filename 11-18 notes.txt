@@ -1,0 +1,10 @@
+DECONVOLUTION
+
+input s 
+filter wi applied to s
+combine them thru convolution to output h
+
+how can we undo this travesty??
+- do so by convolving with a  "deconvolution filter" or 'inverse filter'
+- use damped deconvolutuiion when noisy
+- weiner hompf is bes when you know signal-noise ratio

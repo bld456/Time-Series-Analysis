@@ -1,0 +1,176 @@
+---
+title: "Problem Set #3"
+author: "ESCI5201"
+date: "Due October 12"
+output: 
+  pdf_document:
+    fig_height: 4
+    fig_width: 7
+  html_document:
+    fig_height: 3
+    fig_width: 5
+  word_document:
+    fig_height: 3
+    fig_width: 5
+---
+
+```{r, setup, include=FALSE}
+require(tidyverse)
+require(TSAUMN)
+
+knitr::opts_chunk$set(
+  tidy=TRUE,     
+  size="small",
+  fig.align = "center" )  
+
+theme_set( theme_bw ( ) )
+```
+
+##Introduction
+
+This problem set comes in two parts.  Part 1 is paper and pencil.  Part 2 is R, ya mateys.  Part 1 is intended to deepen your understanding of several fundamental concepts.  Part 2 is meant to get you going with some potentially interesting data.
+
+##Part 1:
+
+Your answers to part 1 can be hand-written or, if you are familiar with latex math notation, included here.  Either way is fine.
+
+###Question 1.
+Derive the expected value, variance and covariance for (a) AR(1) and (b) MA(1) processes.  To make sure there is no confusion (and to make grading easier for me...), the processes should be written:
+
+AR(1): $x_{i+1}=\alpha x_{i}+\epsilon_{i+1}$
+
+MA(1): $x_{i+1}=\beta \epsilon_{i}+\epsilon_{i+1}$
+
+where $\epsilon_i$ is a zero-mean, unit standard deviation normal white noise process
+
+From these derive:
+
+$\text{E}[x_i]$
+
+$\text{E}[(x_i-\text{E}(x_i))^2]$
+
+$\text{E}[(x_i-\text{E}(x_i))(x_j-\text{E}(x_j))]$
+
+Assume stationarity.
+
+###Question 2.
+Given a zero-mean, unit variance normal white noise process with $N$ samples, derive the expected value and variance of the periodogram estimates at each non-negative Fourier frequency.  It may take some time, but stick with it.  This is a good problem to solve as a team.
+
+
+##Part 2:
+This problem uses a standardized tree-ring record from a tree in Missouri. The details of the data set aren't horribly important other than it's sampled yearly (duh) and spans the time interval of 1146 to 1998.  It lived through the little ice age and most of the 20th century.  So perhaps it has a story to tell.  You'll find the data here:
+
+https://github.com/jrevenaugh/ESCI5201/raw/master/MO.tree.csv
+
+To import this to R, use R-Studio's Import Dataset functionality.  Hit the "Import Dataset" button in the "Environment" panel and select "From CSV..."  Paste the abor URL into the top input box and click "Update".  After a moment or two, data will appear in the big panel.  The data is tab-delimited and there is no header.  Column 1 (once you get data split into two columns) is year, column 2 is standardized tree-ring width.  Note that R will import the data as MO_tree unless you change the name in the bottom panel.
+
+###Question 3:
+Use R's ts() function to create a time-series object with the tree-ring data.  Make sure to set the start time and delta t correctly.  One you have it, use gplot.ts() to get a quick (and not too dirty) plot of the data.  Note that gplot.ts() labels the x axis "Time".  You can change this to "Year" by adding (with a "+"):
+
+labs( x = "Year" )
+
+to the end of the gplot.ts() call.
+```{r}
+RingSeries <- ts(data =TreeRings$Width , start = TreeRings$Year[1] , deltat = 1)
+gplot.ts(RingSeries) + labs(x = 'Year', y = 'Width')
+```
+
+###Question 4.
+Describe, generally, what you see.  Are there any apparent periodicities?  Any unusual intervals?  Take a good long look before answering.  Do you think the spectrum is red?  Blue?  White?
+
+Answer:
+\hrule
+There appears to be periodicity on the scale of years to tens of years.Ring width increases for several years, then reaches a local maximum and begins decreasing. Width then reaches a local minimum and begins increasing again. ADditionaly, years of extremely large growth seem to follow ~50 years after a year extremly minimal growh. Both of the apparant periodicities are much smaller than the length of the time series, so I expect the spectrum is blue (Mainly high frequencies).
+\hrule
+
+###Question 5.
+(a) Center the time series by removing the mean value.  R provides multiple ways to accomplish this task.  I don't care how you do it:
+
+```{r}
+# Remove the mean
+meanWidth = mean(TreeRings$Width)
+
+CenteredWidths = TreeRings$Width - meanWidth
+```
+
+(b) The mean value should be zero after question 5, but what is the variance of the time series (assumed stationary and ergodic)?
+
+```{r}
+# Compute variance
+var(CenteredWidths)
+
+```
+
+###Question 6.
+Compute and plot the autocorrelation function for this series.
+
+```{r}
+# Compute and plot ACF here.  You should plot it for several maximum lags--this will allow you to see the short lag and long lag structures clearly.  Feel free to use gplot.acf() for this--it makes nice plots.
+ACF5 <- acf(CenteredWidths, 5)
+ACF100 <- acf(CenteredWidths,100)
+ACF1000 <- acf(CenteredWidths, 1000)
+ACF1000 <- acf(CenteredWidths, 5000)
+
+
+```
+
+Interpret the results in the space below.  There's enough information in this plot to determine if the spectrum is red, white or blue; and to discern any strong periodicities included in it.  Be sure to plot the ACF out to long lags!
+
+Answer:
+\hrule
+ACF interpreta.tion goes here.
+There appear to be a couple of perodicities. The most obvious is on the scale of ~100 years and is apparent on the plot with lags out to 800. The plot with lags out to 100 shows a smaller periodicity, of about 20 years. These are fairly long timescales and indicate that the spectrum will be red.
+\hrule
+
+###Question 7.
+Compute the periodogram estimate of power spectral density using spec.pgram().  spec.pgram() produces a plot by default.  I don't like the plot, so don't include it here.  Instead, use gplot.mtm().  Although the manual says it plots multitaper power spectral estimates only, it can use spec.pgram() output as well.
+
+```{r}
+# Use spec.pgram to estimate the periodogram
+ spec <- spec.pgram( CenteredWidths, plot = FALSE )
+
+ gplot.mtm( spec, trans = "log10" ) 
+ gplot.mtm( spec, trans = "log10", period = TRUE )
+# to plot the periodogram
+```
+
+Interpret the results in terms of overal spectral characteristics and possible periodicities.  Recall that the periodogram is basically the frequency domain representation of the ACF.  The two hold identical information, but certain aspects of the time series will be more apparent in one than the other.  The object returned by spec.pgram() has the spectrum (\$spec) and Fourier frequencies (\$freq) shown in the plot.  You can use it to find local maxima.
+
+
+
+
+Answer:
+\hrule
+Periodogram interpretation goes here.  
+The power in this spectrum is concentrated at low frequency/long period (red). The plot if period-space suggests that the strongest signal comes with period of 10^2.25 which isnt so far off from the 100 year perodicity observed in the ACF. The period-space peridogram also shows power around 10^1.25 = 20 years. This corresponds to the ~20 year period observed in teh ACF. T 
+\hrule
+
+###Question 8:
+Take a stab at "smoothing" the tree-ring data by writing R code to compute the mean value of the 51-points centered around each sample.  Be sure to get the timing correct--the mean should be plotted at the middle of the span of times that entered into it.  You will lose data points off each end of the series--thanks okay.  Once you have the smoothed time series, plot both it (in red) and the unfiltered time series (in black) on one nice plot.  
+
+```{r}
+# R code to smooth and plot the tree-ring data.
+ks = ksmooth(TreeRings$Year, TreeRings$Width, "box", bandwidth = 51)
+with(TreeRings, {
+  plot(Year,Width)
+  lines(ksmooth(Year, Width, "box", bandwidth = 51), col = 2, lwd = 5)
+})
+
+mean(TreeRings$Width[c(75:125)])
+ks$y[100]
+```
+
+The running-mean largely removes periods shorter than ~50 years from the data, leaving the longer periods more-or-less untouched.  
+
+###Question 9:
+Rerun the periodogram on the "smoothed" time series and plot the results.  
+
+```{r}
+# R code to estimate spectrum of smoothed time series using spec.pgram and plot it using gplot.mtm
+ spec2 <- spec.pgram( ks$y, plot = FALSE )
+
+ gplot.mtm( spec2, trans = "log10" ) 
+ gplot.mtm( spec2, trans = "log10", period = TRUE )
+
+```
+
